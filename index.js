@@ -8,7 +8,7 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Servidor para mantener vivo el servicio en Render
+// Servidor Express para mantener vivo el servicio
 app.get('/', (req, res) => {
   res.send('Bot activo');
 });
@@ -17,16 +17,18 @@ app.listen(port, () => {
   console.log(`Servidor web escuchando en puerto ${port}`);
 });
 
-// Cliente WhatsApp Web
+// MongoDB URI desde variable de entorno
+const uri = process.env.MONGODB_URI;
+const clientDB = new MongoClient(uri);
+
 const client = new Client({
   authStrategy: new LocalAuth()
 });
 
-// URI MongoDB Atlas con opción para evitar error TLS en Render
-const uri = process.env.MONGODB_URI;
-const clientDB = new MongoClient(uri, {
-  tlsInsecure: true,
-});
+// Función para iniciar el cliente y agregar listeners
+function startClient() {
+  client.initialize();
+}
 
 client.on('qr', qr => {
   qrcode.generate(qr, { small: true });
@@ -42,6 +44,15 @@ client.on('auth_failure', msg => {
 
 client.on('disconnected', reason => {
   console.log('Cliente desconectado:', reason);
+  console.log('Intentando reconectar en 10 segundos...');
+  setTimeout(() => {
+    startClient();
+  }, 10000);
+});
+
+client.on('error', error => {
+  console.error('Error general:', error);
+  // Puedes agregar lógica adicional para manejo de error
 });
 
 async function getContacts() {
@@ -54,7 +65,7 @@ async function getContacts() {
     console.error('Error obteniendo contactos de la base de datos:', error);
     return [];
   }
-  // Mantener conexión abierta mientras dure el bot
+  // No cerramos la conexión para mantenerla viva mientras dure el bot
 }
 
 async function checkBirthdaysAndSendMessages() {
@@ -85,4 +96,5 @@ client.on('ready', () => {
   });
 });
 
-client.initialize();
+// Inicia la primera vez el cliente
+startClient();
