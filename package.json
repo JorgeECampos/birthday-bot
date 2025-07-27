@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "mongodb": "^6.18.0",
     "node-schedule": "^2.1.1",
     "qrcode-terminal": "^0.12.0",
