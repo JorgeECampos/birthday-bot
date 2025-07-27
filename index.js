@@ -42,7 +42,6 @@ client.on('disconnected', reason => {
   console.log('Cliente desconectado:', reason);
 });
 
-
 async function getContacts() {
   try {
     await clientDB.connect();
