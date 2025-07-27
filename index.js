@@ -8,7 +8,7 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Servidor Express para mantener vivo el servicio
+// Servidor para mantener vivo el servicio en Render
 app.get('/', (req, res) => {
   res.send('Bot activo');
 });
@@ -17,14 +17,16 @@ app.listen(port, () => {
   console.log(`Servidor web escuchando en puerto ${port}`);
 });
 
-// WhatsApp Web Client
+// Cliente WhatsApp Web
 const client = new Client({
   authStrategy: new LocalAuth()
 });
 
-// MongoDB URI desde variable de entorno
+// URI MongoDB Atlas con opción para evitar error TLS en Render
 const uri = process.env.MONGODB_URI;
-const clientDB = new MongoClient(uri);
+const clientDB = new MongoClient(uri, {
+  tlsInsecure: true,
+});
 
 client.on('qr', qr => {
   qrcode.generate(qr, { small: true });
@@ -52,7 +54,7 @@ async function getContacts() {
     console.error('Error obteniendo contactos de la base de datos:', error);
     return [];
   }
-  // No cerramos la conexión para mantenerla viva mientras dure el bot
+  // Mantener conexión abierta mientras dure el bot
 }
 
 async function checkBirthdaysAndSendMessages() {
