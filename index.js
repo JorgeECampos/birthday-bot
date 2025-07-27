@@ -2,20 +2,46 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const schedule = require('node-schedule');
 const { MongoClient } = require('mongodb');
+const express = require('express');
 require('dotenv').config();
 
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Servidor Express para mantener vivo el servicio
+app.get('/', (req, res) => {
+  res.send('Bot activo');
+});
+
+app.listen(port, () => {
+  console.log(`Servidor web escuchando en puerto ${port}`);
+});
+
+// WhatsApp Web Client
 const client = new Client({
   authStrategy: new LocalAuth()
 });
 
 // MongoDB URI desde variable de entorno
 const uri = process.env.MONGODB_URI;
-
 const clientDB = new MongoClient(uri);
 
 client.on('qr', qr => {
   qrcode.generate(qr, { small: true });
 });
+
+client.on('authenticated', () => {
+  console.log('Autenticado con WhatsApp');
+});
+
+client.on('auth_failure', msg => {
+  console.error('Fallo autenticación:', msg);
+});
+
+client.on('disconnected', reason => {
+  console.log('Cliente desconectado:', reason);
+});
+
 
 async function getContacts() {
   try {
@@ -26,8 +52,8 @@ async function getContacts() {
   } catch (error) {
     console.error('Error obteniendo contactos de la base de datos:', error);
     return [];
-  } 
-  // Nota: No cerramos la conexión para mantenerla abierta mientras el bot corra
+  }
+  // No cerramos la conexión para mantenerla viva mientras dure el bot
 }
 
 async function checkBirthdaysAndSendMessages() {
